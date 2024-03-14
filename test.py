@@ -9,10 +9,13 @@ THRESHOLD = 0.75
 # 실행을 위해서는 환경 변수에 다음의 키가 등록되어 있어야 함
 deepl_api_key = os.getenv('DEEPL_API_KEY')
 openai_api_key = os.getenv('OPENAI_API_KEY')
+pinecone_api_key = os.getenv('PINECONE_API_KEY')
 
-# OpenAI와 Deepl API를 사용하기 위한 객체 생성
+# Pinecone, OpenAI와 Deepl API를 사용하기 위한 객체 생성
 client = OpenAI(api_key=openai_api_key)
-translator = Translator(deepl_api_key)
+translator = Translator(auth_key=deepl_api_key)
+pc = Pinecone(api_key=pinecone_api_key)
+index = pc.Index("miraen-test")
 
 
 # String을 받아서 텍스트를 임베딩한 벡터를 반환
@@ -44,15 +47,11 @@ def translate_texts(texts, target_lang="EN-US"):
     return results
 
 
-# Pinecone 불러오기
-pc = Pinecone(api_key="f65c7944-031b-47ac-8e41-f572ed00c29d")
-index = pc.Index("miraen-test")
-
 # 텍스트 데이터 불러오기
 with open("titles-of-textbook.txt", "r", encoding="utf-8") as f:
     sample_text = [line for line in f.readlines() if line.strip() != ""]
 
-# 텍스트 파일에서 대단원, 소단원, 설명 추출
+# titles-of-textbook.txt에서 대단원, 소단원, 설명 추출
 title_pattern = r"^\d+\."
 titles = [title for title in sample_text if re.search(title_pattern, title)]
 titles = [re.sub(title_pattern, "", title).strip() for title in titles]
@@ -77,26 +76,29 @@ english_subtitles = [
     "Division",
 ]
 
-vectors_of_explains = []
+# # Pinecone에 데이터 업로드
+# vectors_of_explains = []
+#
+# for explain in explains:
+#     vectors_of_explains.append(explain)
+#
+# for subtitle, explain in zip(english_subtitles, vectors_of_explains):
+#     index.upsert(
+#         vectors=[{"id": subtitle, "values": embed_text(explain)}]
+#     )
 
-for explain in vectors_of_explains:
-    vectors_of_explains.append(explain)
+sample_explain = "식이 다항식일 경우 차수가 같은 항끼리 묶어서 더한다."
+translated_explain = translate_text(sample_explain).text
 
-for subtitle, explain in zip(english_subtitles, vectors_of_explains):
-    index.upsert(
-        vectors=[{"id": subtitle, "values": embed_text(explain)}]
-    )
-
-sample_explain = "엿 먹어"
-
+# sample_explain을 영어로 번역한 후 Pinecone에 쿼리
 queried = index.query(
-    vector=embed_text(translate_text(sample_explain).text),
+    vector=embed_text(translated_explain),
     top_k=1,
-    include_values=True
 )
 
 matches = [item.id for item in queried.matches if item.score >= THRESHOLD]
 
-print("Translation of explain into Englsih: " + translate_text(sample_explain).text)
+print("Sample explaination: " + sample_explain)
+print("Translated explaination: " + translated_explain)
 print(f"Matched title: {matches}")
-print(f"A score of the most similar title: {queried.matches[0].score}")
+print(f"The score of the most similar title: {queried.matches[0].score}")
