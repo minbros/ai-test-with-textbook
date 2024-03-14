@@ -1,13 +1,17 @@
 import re
+import os
 from deepl import Translator
 from pinecone import Pinecone
 from openai import OpenAI
 
 THRESHOLD = 0.75
 
-deepl_api_key = "d074f51f-d8a1-4dfd-8160-d6de6d312479:fx"
+# 실행을 위해서는 환경 변수에 다음의 키가 등록되어 있어야 함
+deepl_api_key = os.getenv('DEEPL_API_KEY')
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
-client = OpenAI(api_key="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")
+# OpenAI와 Deepl API를 사용하기 위한 객체 생성
+client = OpenAI(api_key=openai_api_key)
 translator = Translator(deepl_api_key)
 
 
@@ -41,10 +45,6 @@ def translate_texts(texts, target_lang="EN-US"):
 
 
 # Pinecone 불러오기
-# 원래 api_key
-# pc = Pinecone(api_key="094c41b3-8439-4c9e-aae1-4166fd101e4e")
-
-# 변경한 api_key
 pc = Pinecone(api_key="f65c7944-031b-47ac-8e41-f572ed00c29d")
 index = pc.Index("miraen-test")
 
@@ -88,7 +88,6 @@ for subtitle, explain in zip(english_subtitles, vectors_of_explains):
     )
 
 sample_explain = "엿 먹어"
-print(translate_text(sample_explain).text)
 
 queried = index.query(
     vector=embed_text(translate_text(sample_explain).text),
@@ -97,5 +96,7 @@ queried = index.query(
 )
 
 matches = [item.id for item in queried.matches if item.score >= THRESHOLD]
-print(matches)
-print(queried.matches[0].score)
+
+print("Translation of explain into Englsih: " + translate_text(sample_explain).text)
+print(f"Matched title: {matches}")
+print(f"A score of the most similar title: {queried.matches[0].score}")
