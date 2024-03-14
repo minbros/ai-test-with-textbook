@@ -87,7 +87,7 @@ english_subtitles = [
 #         vectors=[{"id": subtitle, "values": embed_text(explain)}]
 #     )
 
-sample_explain = "식이 다항식일 경우 차수가 같은 항끼리 묶어서 더한다."
+sample_explain = input("Enter the explaination: ")
 translated_explain = translate_text(sample_explain).text
 
 # sample_explain을 영어로 번역한 후 Pinecone에 쿼리
@@ -96,9 +96,12 @@ queried = index.query(
     top_k=1,
 )
 
+score = queried.matches[0].score
 matches = [item.id for item in queried.matches if item.score >= THRESHOLD]
 
-print("Sample explaination: " + sample_explain)
 print("Translated explaination: " + translated_explain)
-print(f"Matched title: {matches}")
+if score < THRESHOLD:
+    print("No matched title")
+else:
+    print(f"Matched title: {matches[0]}")
 print(f"The score of the most similar title: {queried.matches[0].score}")
