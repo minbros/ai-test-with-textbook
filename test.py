@@ -1,10 +1,14 @@
 import re
+from deepl import Translator
 from pinecone import Pinecone
 from openai import OpenAI
 
-# from google.cloud import translate_v2 as translate
+THRESHOLD = 0.75
+
+deepl_api_key = "d074f51f-d8a1-4dfd-8160-d6de6d312479:fx"
 
 client = OpenAI(api_key="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")
+translator = Translator(deepl_api_key)
 
 
 # String을 받아서 텍스트를 임베딩한 벡터를 반환
@@ -22,16 +26,26 @@ def embed_texts(texts):
     return vectors
 
 
-# def translate_text(text, target_language="en"):
-#     translate_client = translate.Client()
+# Deepl 이용해서 번역
+def translate_text(text, target_lang="EN-US"):
+    result = translator.translate_text(text, target_lang=target_lang)
+    return result
 
-#     result = translate_client.translate(text, target_language=target_language)
 
-#     return result["translatedText"]
+def translate_texts(texts, target_lang="EN-US"):
+    results = []
+    for text in texts:
+        result = translator.translate_text(text, target_lang=target_lang)
+        results.append(result)
+    return results
 
 
 # Pinecone 불러오기
-pc = Pinecone(api_key="094c41b3-8439-4c9e-aae1-4166fd101e4e")
+# 원래 api_key
+# pc = Pinecone(api_key="094c41b3-8439-4c9e-aae1-4166fd101e4e")
+
+# 변경한 api_key
+pc = Pinecone(api_key="f65c7944-031b-47ac-8e41-f572ed00c29d")
 index = pc.Index("miraen-test")
 
 # 텍스트 데이터 불러오기
@@ -62,27 +76,26 @@ english_subtitles = [
     "Nature of Multiplication",
     "Division",
 ]
-# upsert하는 부분(임시 생노가다)
-# index.upsert(
-#     vectors=[{"id": english_subtitles[0], "values": vectors_of_explains[0]},
-#              {"id": english_subtitles[1], "values": vectors_of_explains[1]},
-#              {"id": english_subtitles[2], "values": vectors_of_explains[2]},
-#              ],
-#     namespace="A",
-# )
-#
-# index.upsert(
-#     vectors=[{"id": english_subtitles[3], "values": vectors_of_explains[3]},
-#              {"id": english_subtitles[4], "values": vectors_of_explains[4]},
-#              {"id": english_subtitles[5], "values": vectors_of_explains[5]},
-#              ],
-#     namespace="B",
-# )
 
-sample_explain = "같은 차수의 다항식끼리 더한다."
+vectors_of_explains = []
 
-print(index.query(
-    vector=embed_text(sample_explain),
+for explain in vectors_of_explains:
+    vectors_of_explains.append(explain)
+
+for subtitle, explain in zip(english_subtitles, vectors_of_explains):
+    index.upsert(
+        vectors=[{"id": subtitle, "values": embed_text(explain)}]
+    )
+
+sample_explain = "엿 먹어"
+print(translate_text(sample_explain).text)
+
+queried = index.query(
+    vector=embed_text(translate_text(sample_explain).text),
     top_k=1,
-    include_values=True,
-))
+    include_values=True
+)
+
+matches = [item.id for item in queried.matches if item.score >= THRESHOLD]
+print(matches)
+print(queried.matches[0].score)
