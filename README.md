@@ -24,6 +24,13 @@
 
 ### 출력 예시
 ```shell
+Enter the explaination: 안녕하세요
+Translated explaination: hello
+The score of the most similar title: 0.723045588
+The score of the most similar name: 0.749188602
+No matched title
+```
+```shell
 Enter the explaination: 다항식의 덧셈
 Translated explaination: Addition of polynomials
 The score of the most similar title: 0.810874641
