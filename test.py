@@ -47,9 +47,31 @@ def translate_texts(texts, target_lang="EN-US"):
     return results
 
 
+def read_file_and_process(filename):
+    with open(filename, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # {} 안에 있는 문자열 찾기
+    pattern = re.compile(r"\{.*?}", re.DOTALL)
+    _matches = pattern.findall(content)
+
+    # {} 안에 있는 문자열에서 줄바꿈 제거
+    _matches = [match.replace('\n', ' ') for match in _matches]
+
+    # 원본 문자열에서 {} 안에 있는 문자열 제거
+    content = pattern.sub('', content)
+
+    # 나머지 문자열을 줄바꿈 단위로 분리
+    lines = content.split('\n')
+
+    # {} 안에 있는 문자열과 나머지 문자열 합치기
+    result = lines + _matches
+
+    return result
+
+
 # 텍스트 데이터 불러오기
-with open("titles-of-textbook.txt", "r", encoding="utf-8") as f:
-    sample_text = [line for line in f.readlines() if line.strip() != ""]
+sample_text = read_file_and_process("titles-of-textbook.txt")
 
 # titles-of-textbook.txt에서 대단원, 소단원, 설명 추출
 title_pattern = r"^\d+\."
@@ -57,12 +79,12 @@ titles = [title for title in sample_text if re.search(title_pattern, title)]
 titles = [re.sub(title_pattern, "", title).strip() for title in titles]
 
 subtitle_pattern = r"[a-z]+\."
-subtitles = [title for title in sample_text if re.search(subtitle_pattern, title)]
-subtitles = [re.sub(subtitle_pattern, "", title).strip() for title in subtitles]
+subtitles = [subtitle for subtitle in sample_text if re.search(subtitle_pattern, subtitle)]
+subtitles = [re.sub(subtitle_pattern, "", subtitle).strip() for subtitle in subtitles]
 
-explain_pattern = r"^\-+"
-explains = [title for title in sample_text if re.search(explain_pattern, title)]
-explains = [re.sub(explain_pattern, "", title).strip() for title in explains]
+explain_pattern = r"\{.*?}"
+explains = [explain for explain in sample_text if re.search(explain_pattern, explain)]
+explains = [explain.lstrip('{').rstrip('}').strip() for explain in explains]
 
 # Pinecone의 namespace에 한글 문자열이 올 수 없어서 영어로 변경(나중에는 번역 API 사용해야 함)
 temp_titles = ["A", "B"]
@@ -75,6 +97,9 @@ english_subtitles = [
     "Nature of Multiplication",
     "Division",
 ]
+
+print(subtitles)
+print(explains)
 
 # # Pinecone에 데이터 업로드
 # vectors_of_explains = []
