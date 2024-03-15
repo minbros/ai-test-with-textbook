@@ -2,7 +2,7 @@
 
 ### 프로그램 실행 전 확인 사항
 - 이 프로그램을 실행하기 위해서는 DeepL, OpenAI의 API 키가 필요하며, 이는 각각 시스템의 환경 변수에 "DEEPL_API_KEY", "OPENAI_API_KEY"라는 이름으로 저장되어야 합니다.
-- 파이썬 라이브러리에 deepl, openai 모듈이 설치되어 있어야 합니다.
+- 파이썬 라이브러리에 deepl, openai, pinecone-client 모듈이 설치되어 있어야 합니다.
 
 ### 기능
 - 프로그램을 실행하면, "Enter the explaination: " 문구와 함께 문자열을 입력받습니다. 이때 입력하는 문자열은 textbook.txt에 존재하는 단원과 연관이 있는 설명이어야 합니다.
