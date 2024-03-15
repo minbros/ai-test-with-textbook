@@ -35,14 +35,14 @@ def embed_texts(texts):
 
 # Deepl 이용해서 번역
 def translate_text(text, target_lang="EN-US"):
-    result = translator.translate_text(text, target_lang=target_lang)
+    result = translator.translate_text(text, target_lang=target_lang).text
     return result
 
 
 def translate_texts(texts, target_lang="EN-US"):
     results = []
     for text in texts:
-        result = translator.translate_text(text, target_lang=target_lang)
+        result = translator.translate_text(text, target_lang=target_lang).text
         results.append(result)
     return results
 
@@ -87,19 +87,13 @@ explains = [explain for explain in sample_text if re.search(explain_pattern, exp
 explains = [explain.lstrip('{').rstrip('}').strip() for explain in explains]
 
 # Pinecone의 namespace에 한글 문자열이 올 수 없어서 영어로 변경(나중에는 번역 API 사용해야 함)
-temp_titles = ["A", "B"]
-english_titles = ["Addition and Subtraction", "Multiplication and Division"]
-english_subtitles = [
-    "Addition",
-    "Subtraction",
-    "Nature of Addition",
-    "Multiplication",
-    "Nature of Multiplication",
-    "Division",
-]
+english_titles = translate_texts(titles)
+english_subtitles = translate_texts(subtitles)
 
 print(subtitles)
 print(explains)
+print(english_titles)
+print(english_subtitles)
 
 # # Pinecone에 데이터 업로드
 # vectors_of_explains = []
@@ -113,7 +107,7 @@ print(explains)
 #     )
 
 sample_explain = input("Enter the explaination: ")
-translated_explain = translate_text(sample_explain).text
+translated_explain = translate_text(sample_explain)
 
 # sample_explain을 영어로 번역한 후 Pinecone에 쿼리
 queried = index.query(
